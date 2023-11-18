@@ -206,6 +206,14 @@ require('lazy').setup({
         end,
       },
     },
+    opts = {
+      pickers = {
+        find_files = {
+          -- find_command = { "fd", "-H", "-I", "-E", ".git", "-E", "node_modules", "-E", "dist", "-E", ".nuxt", "-E", ".output", "-E", ".netlify", "--glob", "" },
+          find_commane = { "rg", "--files", "--hidden", "-g", "!.git" },
+        }
+      }
+    }
   },
 
   {
@@ -213,6 +221,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     dependencies = {
       'nvim-treesitter/nvim-treesitter-textobjects',
+      'JoosepAlviste/nvim-ts-context-commentstring',
     },
     build = ':TSUpdate',
   },
@@ -378,7 +387,11 @@ vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = 
 vim.defer_fn(function()
   require('nvim-treesitter.configs').setup {
     -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash' },
+    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'css', 'graphql', 'php', 'svelte', 'tsx', 'vue' },
+
+    context_commentstring = {
+      enable = true
+    },
 
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
     auto_install = false,
@@ -601,6 +614,35 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
+
+require'lspconfig.configs'.volar_html = {
+  default_config = {
+    cmd = volar_cmd,
+    root_dir = volar_root_dir,
+    on_new_config = on_new_config,
+
+    filetypes = { 'vue'},
+    -- If you want to use Volar's Take Over Mode (if you know, you know), intentionally no 'json':
+    --filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+    init_options = {
+      typescript = {
+        tsdk = ''
+      },
+      documentFeatures = {
+        selectionRange = true,
+        foldingRange = true,
+        linkedEditingRange = true,
+        documentSymbol = true,
+        -- not supported - https://github.com/neovim/neovim/pull/13654
+        documentColor = false,
+        documentFormatting = {
+          defaultPrintWidth = 100,
+        },
+      }
+    },
+  }
+}
+require'lspconfig'.volar_html.setup{}
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
