@@ -157,6 +157,12 @@ require('lazy').setup({
     'navarasu/onedark.nvim',
     priority = 1000,
     config = function()
+      vim.g.onedark_config = {
+        style = 'darker',
+        code_style = {
+          comments = 'none'
+        }
+      }
       vim.cmd.colorscheme 'onedark'
     end,
   },
