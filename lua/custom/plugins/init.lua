@@ -6,4 +6,8 @@
 -- require'lspconfig'.volar.setup{
 -- 	filetypes = {'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json'}
 -- }
-return {}
+return {
+  "windwp/nvim-autopairs",
+  event = "InsertEnter",
+  opts = {},
+}
