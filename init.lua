@@ -524,7 +524,21 @@ require('which-key').register {
 -- mason-lspconfig requires that these setup functions are called in this order
 -- before setting up the servers.
 require('mason').setup()
-require('mason-lspconfig').setup()
+require('mason-lspconfig').setup {
+  ensure_installed = {
+    'deno',
+    'html-lsp',
+    'intelephense',
+    'json-lsp',
+    'lua_ls',
+    'prettier',
+    'rust-analyzer',
+    'svelte-language-server',
+    'tailwindcss-language-server',
+    'typescript-language-server',
+    'vue-language-server',
+  },
+}
 
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
