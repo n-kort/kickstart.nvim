@@ -294,6 +294,8 @@ vim.o.completeopt = 'menuone,noselect'
 vim.o.termguicolors = true
 
 -- [[ Basic Keymaps ]]
+-- NvimTree
+vim.keymap.set('n', '<leader>t', ':NvimTreeToggle<CR>', { desc = 'Toggle NvimTree' })
 
 -- Keymaps for better default experience
 -- See `:help vim.keymap.set()`
