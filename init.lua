@@ -300,6 +300,13 @@ vim.o.termguicolors = true
 -- NvimTree
 vim.keymap.set('n', '<leader>t', ':NvimTreeToggle<CR>', { desc = 'Toggle NvimTree' })
 
+-- diffview
+vim.keymap.set('n', '<leader>gd', ':DiffviewOpen<CR>', { desc = 'Open Diffview' })
+vim.keymap.set('n', '<leader>gD', ':DiffviewClose<CR>', { desc = 'Close Diffview' })
+
+-- neoclip
+vim.keymap.set('n', '<leader>v', ':Telescope neoclip<CR>', { desc = 'Open Neoclip' })
+
 -- Keymaps for better default experience
 -- See `:help vim.keymap.set()`
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
@@ -337,6 +344,8 @@ require('telescope').setup {
     },
   },
 }
+
+require('telescope').load_extension('neoclip')
 
 -- Enable telescope fzf native, if installed
 pcall(require('telescope').load_extension, 'fzf')
