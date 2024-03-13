@@ -412,7 +412,7 @@ vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = 
 vim.defer_fn(function()
   require('nvim-treesitter.configs').setup {
     -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'css', 'graphql', 'php', 'svelte', 'tsx', 'vue' },
+    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'css', 'graphql', 'php', 'svelte', 'tsx', 'vue', 'yaml' },
 
     context_commentstring = {
       enable = true
@@ -421,8 +421,14 @@ vim.defer_fn(function()
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
     auto_install = false,
 
-    highlight = { enable = true },
-    indent = { enable = true },
+    highlight = {
+      enable = true,
+      -- disable = { 'svelte' },
+    },
+    indent = {
+      enable = true,
+      -- disable = { 'svelte' },
+    },
     incremental_selection = {
       enable = true,
       keymaps = {
@@ -655,57 +661,20 @@ cmp.setup {
   },
 }
 
--- -- `/` cmdline setup.
--- cmp.setup.cmdline('/', {
---   mapping = cmp.mapping.preset.cmdline(),
---   sources = {
---     { name = 'buffer' }
---   }
--- })
---
--- -- `:` cmdline setup.
--- cmp.setup.cmdline(':', {
---   mapping = cmp.mapping.preset.cmdline(),
---   sources = cmp.config.sources({
---     { name = 'path' }
---   }, {
---     {
---       name = 'cmdline',
---       option = {
---         ignore_cmds = { 'Man', '!' }
---       }
---     }
---   })
--- })
+require'lspconfig'.volar.setup{}
 
-require'lspconfig.configs'.volar_html = {
-  default_config = {
-    cmd = volar_cmd,
-    root_dir = volar_root_dir,
-    on_new_config = on_new_config,
-
-    filetypes = { 'vue'},
-    -- If you want to use Volar's Take Over Mode (if you know, you know), intentionally no 'json':
-    --filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
-    init_options = {
-      typescript = {
-        tsdk = ''
+require'lspconfig'.tsserver.setup {
+  init_options = {
+    plugins = {
+      {
+        name = '@vue/typescript-plugin',
+        location = '/usr/local/lib/node_modules/@vue/typescript-plugin',
+        languages = { 'javascript', 'typescript', 'vue' },
       },
-      documentFeatures = {
-        selectionRange = true,
-        foldingRange = true,
-        linkedEditingRange = true,
-        documentSymbol = true,
-        -- not supported - https://github.com/neovim/neovim/pull/13654
-        documentColor = false,
-        documentFormatting = {
-          defaultPrintWidth = 100,
-        },
-      }
     },
-  }
+  },
+  filetypes = { 'javascript', 'typescript', 'vue' },
 }
-require'lspconfig'.volar_html.setup{}
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
