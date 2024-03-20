@@ -574,12 +574,8 @@ require('mason-lspconfig').setup {
 --  If you want to override the default filetypes that your language server will attach to you can
 --  define the property 'filetypes' to the map in question.
 local servers = {
-  -- clangd = {},
-  -- gopls = {},
-  -- pyright = {},
-  -- rust_analyzer = {},
+  -- volar = {},
   -- tsserver = {},
-  -- html = { filetypes = { 'html', 'twig', 'hbs'} },
 
   lua_ls = {
     Lua = {
@@ -666,9 +662,8 @@ cmp.setup {
   },
 }
 
-require'lspconfig'.volar.setup{}
-
 require'lspconfig'.tsserver.setup {
+  on_attach = on_attach,
   init_options = {
     plugins = {
       {
@@ -679,6 +674,11 @@ require'lspconfig'.tsserver.setup {
     },
   },
   filetypes = { 'javascript', 'typescript', 'vue' },
+}
+
+require'lspconfig'.volar.setup {
+  on_attach = on_attach,
+  filetypes = { 'vue' },
 }
 
 -- The line beneath this is called `modeline`. See `:help modeline`
