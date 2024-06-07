@@ -363,7 +363,16 @@ require('lazy').setup({
               }
             }
           },
-          filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },settings = {},
+          filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
+          settings = {},
+          on_attach = function(client)
+            if require('lspconfig').util.root_pattern('deno.json', 'deno.jsonc')(vim.fn.getcwd()) then
+              if client.name == 'tsserver' then
+                client.stop()
+                return
+              end
+            end
+          end,
         },
 
         volar = {
