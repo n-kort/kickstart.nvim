@@ -360,7 +360,8 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        tsserver = {
+        -- tsserver = {
+        ts_ls = {
           init_options = {
             plugins = {
               {
@@ -374,7 +375,8 @@ require('lazy').setup({
           settings = {},
           on_attach = function(client)
             if require('lspconfig').util.root_pattern('deno.json', 'deno.jsonc')(vim.fn.getcwd()) then
-              if client.name == 'tsserver' then
+              -- if client.name == 'tsserver' then
+              if client.name == 'ts_ls' then
                 client.stop()
                 return
               end
