@@ -23,26 +23,64 @@ return {
   {
     dir = IS_DEV and "~/Projects/research/CopilotChat.nvim" or nil,
     "CopilotC-Nvim/CopilotChat.nvim",
-    version = "v2.0.0",
-    -- branch = "canary", -- Use the canary branch if you want to test the latest features
+    -- version = "v2.0.0",
     dependencies = {
+      { "github/copilot.vim" },
       { "nvim-telescope/telescope.nvim" }, -- Use telescope for help actions
       { "nvim-lua/plenary.nvim" },
     },
+    build = "make tiktoken",
     opts = {
       prompts = prompts,
       auto_follow_cursor = false, -- Don't follow the cursor after getting response
       show_help = true, -- Show help in virtual text
+
+      -- default mappings
       mappings = {
-        close = "q", -- Close chat
-        reset = "<C-l>", -- Clear the chat buffer
-        complete = "<Tab>", -- Change to insert mode and press tab to get the completion
-        submit_prompt = "<CR>", -- Submit question to Copilot Chat
-        accept_diff = "<C-a>", -- Accept the diff
-        show_diff = "<C-s>", -- Show the diff
-        show_system_prompt = "gmp", -- Show system prompt
-        show_user_selection = "gms", -- Show user selection
+        complete = {
+          detail = 'Use @<Tab> or /<Tab> for options.',
+          insert ='<Tab>',
+        },
+        close = {
+          normal = 'q',
+          insert = '<C-c>'
+        },
+        reset = {
+          normal ='<C-l>',
+          insert = '<C-l>'
+        },
+        submit_prompt = {
+          normal = '<CR>',
+          insert = '<C-s>'
+        },
+        accept_diff = {
+          normal = '<C-y>',
+          insert = '<C-y>'
+        },
+        yank_diff = {
+          normal = 'gy',
+          register = '"',
+        },
+        show_diff = {
+          normal = 'gd'
+        },
+        show_system_prompt = {
+          normal = 'gp'
+        },
+        show_user_selection = {
+          normal = 'gs'
+        },
       },
+      -- mappings = {
+      --   close = "q", -- Close chat
+      --   reset = "<C-l>", -- Clear the chat buffer
+      --   complete = "<Tab>", -- Change to insert mode and press tab to get the completion
+      --   submit_prompt = "<CR>", -- Submit question to Copilot Chat
+      --   accept_diff = "<C-a>", -- Accept the diff
+      --   show_diff = "<C-s>", -- Show the diff
+      --   show_system_prompt = "gmp", -- Show system prompt
+      --   show_user_selection = "gms", -- Show user selection
+      -- },
     },
     config = function(_, opts)
       local chat = require("CopilotChat")
