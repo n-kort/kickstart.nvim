@@ -29,7 +29,7 @@ return {
       { "nvim-telescope/telescope.nvim" }, -- Use telescope for help actions
       { "nvim-lua/plenary.nvim" },
     },
-    build = "make tiktoken",
+    -- build = "make tiktoken",
     opts = {
       prompts = prompts,
       auto_follow_cursor = false, -- Don't follow the cursor after getting response
