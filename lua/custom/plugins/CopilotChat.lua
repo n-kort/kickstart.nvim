@@ -103,7 +103,14 @@ return {
       chat.setup(opts)
 
       vim.api.nvim_create_user_command("CopilotChatVisual", function(args)
-        chat.ask(args.args, { selection = select.visual })
+        chat.ask(args.args, {
+          selection = select.visual,
+          window = {
+            layout = 'horizontal',
+            width = 1,
+            height = 0.5,
+          }
+        })
       end, { nargs = "*", range = true })
 
       -- Inline chat with Copilot
@@ -170,7 +177,7 @@ return {
       -- Chat with Copilot in visual mode
       {
         "<leader>ccv",
-        ":CopilotChatVisual",
+        "<cmd>CopilotChatVisual<cr>",
         desc = "CopilotChat - Open in vertical split",
       },
       -- Custom input for CopilotChat
