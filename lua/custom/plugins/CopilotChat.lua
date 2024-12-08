@@ -23,7 +23,7 @@ return {
   {
     dir = IS_DEV and "~/Projects/research/CopilotChat.nvim" or nil,
     "CopilotC-Nvim/CopilotChat.nvim",
-    version = "main",
+    branch = "main",
     dependencies = {
       { "github/copilot.vim" },
       { "nvim-telescope/telescope.nvim" }, -- Use telescope for help actions
