@@ -237,9 +237,6 @@ require('lazy').setup({
   -- Detect tabstop and shiftwidth automatically
   -- 'tpope/vim-sleuth',
 
-  -- Pug syntax
-  'digitaltoad/vim-pug',
-
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
   {
@@ -906,6 +903,21 @@ require('lazy').setup({
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
   { import = 'custom.plugins' },
+
+  -- Pug syntax
+  -- {
+  --   'digitaltoad/vim-pug',
+  --
+  --   config = function()
+  --     vim.cmd([[
+  --       augroup pug_in_vue
+  --         autocmd!
+  --         autocmd BufNewFile,BufRead *.vue setlocal filetype=vue.pug
+  --         autocmd Syntax vue setlocal syntax=vue.pug
+  --       augroup END
+  --     ]])
+  --   end,
+  -- },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
