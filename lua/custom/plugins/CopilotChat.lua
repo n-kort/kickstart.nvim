@@ -103,7 +103,7 @@ return {
       chat.setup(opts)
 
       vim.api.nvim_create_user_command("CopilotChatVisual", function(args)
-        chat.ask(args.args, {
+        chat.open({
           selection = select.visual,
           window = {
             layout = 'horizontal',
@@ -115,11 +115,11 @@ return {
 
       -- Inline chat with Copilot
       vim.api.nvim_create_user_command("CopilotChatInline", function(args)
-        chat.ask(args.args, {
+        chat.open({
           selection = select.visual,
           window = {
             layout = "float",
-            relative = "cursor",
+            relative = "win",
             width = 0.5,
             height = 0.4,
             row = 1,
