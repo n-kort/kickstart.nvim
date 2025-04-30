@@ -399,16 +399,16 @@ require('lazy').setup({
           end,
         },
 
-        -- denols = {
-        --   on_attach = function(client)
-        --     if require('lspconfig').util.root_pattern('package.json')(vim.fn.getcwd()) then
-        --       if client.name == 'denols' then
-        --         client.stop()
-        --         return
-        --       end
-        --     end
-        --   end,
-        -- },
+        denols = {
+          on_init = function(client)
+            if not require('lspconfig').util.root_pattern('deno.json', 'deno.jsonc')(vim.fn.getcwd()) then
+              if client.name == 'denols' then
+                client.stop()
+                return
+              end
+            end
+          end,
+        },
 
         volar = {
           filetypes = { 'vue' },
