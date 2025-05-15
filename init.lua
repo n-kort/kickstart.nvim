@@ -347,6 +347,18 @@ require('lazy').setup({
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
+      -- local nvim_lsp = require('lspconfig')
+      -- nvim_lsp.denols.setup {
+      --   on_attach = on_attach,
+      --   root_dir = nvim_lsp.util.root_pattern("deno.json", "deno.jsonc"),
+      -- }
+      --
+      -- nvim_lsp.ts_ls.setup {
+      --   on_attach = on_attach,
+      --   root_dir = nvim_lsp.util.root_pattern("package.json"),
+      --   single_file_support = false
+      -- }
+
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
@@ -387,27 +399,13 @@ require('lazy').setup({
             }
           },
           filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
+          root_dir = require("lspconfig").util.root_pattern({ "package.json", "tsconfig.json" }),
+          single_file_support = false,
           settings = {},
-          on_attach = function(client)
-            if require('lspconfig').util.root_pattern('deno.json', 'deno.jsonc')(vim.fn.getcwd()) then
-              -- if client.name == 'tsserver' then
-              if client.name == 'ts_ls' then
-                client.stop()
-                return
-              end
-            end
-          end,
         },
 
         denols = {
-          on_init = function(client)
-            if not require('lspconfig').util.root_pattern('deno.json', 'deno.jsonc')(vim.fn.getcwd()) then
-              if client.name == 'denols' then
-                client.stop()
-                return
-              end
-            end
-          end,
+          root_dir = require("lspconfig").util.root_pattern({"deno.json", "deno.jsonc"}),
         },
 
         volar = {
@@ -449,18 +447,37 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      require('mason-lspconfig').setup {
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for tsserver)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
-      }
+      -- require('mason-lspconfig').setup {
+      --   ensure_installed = {},
+      --   automatic_installation = false,
+      --   handlers = {
+      --     function(server_name)
+      --       local server = servers[server_name] or {}
+      --       -- This handles overriding only values explicitly passed
+      --       -- by the server configuration above. Useful when disabling
+      --       -- certain features of an LSP (for example, turning off formatting for tsserver)
+      --       server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+      --       require('lspconfig')[server_name].setup(server)
+      --     end,
+      --   },
+      -- }
+      local lspconfig = require('lspconfig')
+
+      for server_name, config in pairs(servers) do
+        local is_deno = require("lspconfig").util.root_pattern({ "deno.json", "deno.lock" })
+
+        if server_name == 'denols' then
+          if is_deno then
+            lspconfig.denols.setup(config)
+            vim.lsp.config(server_name, config)
+          end
+          return
+        end
+
+        -- all others
+        lspconfig[server_name].setup {}
+        vim.lsp.config(server_name, config)
+      end
     end,
   },
 
