@@ -347,18 +347,6 @@ require('lazy').setup({
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
-      -- local nvim_lsp = require('lspconfig')
-      -- nvim_lsp.denols.setup {
-      --   on_attach = on_attach,
-      --   root_dir = nvim_lsp.util.root_pattern("deno.json", "deno.jsonc"),
-      -- }
-      --
-      -- nvim_lsp.ts_ls.setup {
-      --   on_attach = on_attach,
-      --   root_dir = nvim_lsp.util.root_pattern("package.json"),
-      --   single_file_support = false
-      -- }
-
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
@@ -368,7 +356,15 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
-      local servers = {
+      vim.lsp.config('intelephense', {
+        filetypes = { 'php' },
+        settings = {
+          intelephense = {
+            stubs = { "bcmath", "bz2", "Core", "curl", "date", "dom", "fileinfo", "filter", "gd", "gettext", "hash", "iconv", "imap", "intl", "json", "libxml", "mbstring", "mcrypt", "mysql", "mysqli", "password", "pcntl", "pcre", "PDO", "pdo_mysql", "Phar", "readline", "regex", "session", "SimpleXML", "sockets", "sodium", "standard", "superglobals", "tokenizer", "xml", "xdebug" },
+          }
+        }
+      })
+      -- local servers = {
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -379,57 +375,56 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        intelephense = {
-          filetypes = { 'php' },
-          settings = {
-            intelephense = {
-              stubs = { "bcmath", "bz2", "Core", "curl", "date", "dom", "fileinfo", "filter", "gd", "gettext", "hash", "iconv", "imap", "intl", "json", "libxml", "mbstring", "mcrypt", "mysql", "mysqli", "password", "pcntl", "pcre", "PDO", "pdo_mysql", "Phar", "readline", "regex", "session", "SimpleXML", "sockets", "sodium", "standard", "superglobals", "tokenizer", "xml", "xdebug", "xmlreader", "xmlwriter", "yaml", "zip", "zlib", "wordpress", "wordpress-stubs", "woocommerce-stubs", "acf-pro-stubs", "wordpress-globals", "wp-cli-stubs", "genesis-stubs", "polylang-stubs" },
+        -- intelephense {
+        --   filetypes = { 'php' },
+        --   settings = {
+        --     intelephense = {
+        --       stubs = { "bcmath", "bz2", "Core", "curl", "date", "dom", "fileinfo", "filter", "gd", "gettext", "hash", "iconv", "imap", "intl", "json", "libxml", "mbstring", "mcrypt", "mysql", "mysqli", "password", "pcntl", "pcre", "PDO", "pdo_mysql", "Phar", "readline", "regex", "session", "SimpleXML", "sockets", "sodium", "standard", "superglobals", "tokenizer", "xml", "xdebug", "xmlreader", "xmlwriter", "yaml", "zip", "zlib", "wordpress", "wordpress-stubs", "woocommerce-stubs", "acf-pro-stubs", "wordpress-globals", "wp-cli-stubs", "genesis-stubs", "polylang-stubs" },
+        --     }
+        --   }
+        -- },
+
+      vim.lsp.config('ts_ls', {
+        init_options = {
+          plugins = {
+            {
+              name = '@vue/typescript-plugin',
+              location = '/usr/local/lib/node_modules/@vue/typescript-plugin',
+              languages = { 'javascript', 'typescript', 'vue' }
             }
           }
         },
+        filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
+        single_file_support = false,
+        settings = {},
+      })
 
-        ts_ls = {
-          init_options = {
-            plugins = {
-              {
-                name = '@vue/typescript-plugin',
-                location = '/usr/local/lib/node_modules/@vue/typescript-plugin',
-                languages = { 'javascript', 'typescript', 'vue' }
-              }
-            }
-          },
-          filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
-          root_dir = require("lspconfig").util.root_pattern({ "package.json", "tsconfig.json" }),
-          single_file_support = false,
-          settings = {},
-        },
+      vim.lsp.config('denols', {
+        root_dir = require("lspconfig").util.root_pattern({"deno.json", "deno.jsonc"}),
+      })
 
-        denols = {
-          root_dir = require("lspconfig").util.root_pattern({"deno.json", "deno.jsonc"}),
-        },
+      vim.lsp.config('volar', {
+        filetypes = { 'vue' },
+      })
 
-        volar = {
-          filetypes = { 'vue' },
-        },
-
-        lua_ls = {
-          -- cmd = {...},
-          -- filetypes = { ...},
-          -- capabilities = {},
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = 'Replace',
-              },
-              diagnostics = {
-                globals = { 'vim' },
-              },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
+      vim.lsp.config('lua_ls', {
+        -- cmd = {...},
+        -- filetypes = { ...},
+        -- capabilities = {},
+        settings = {
+          Lua = {
+            completion = {
+              callSnippet = 'Replace',
             },
+            diagnostics = {
+              globals = { 'vim' },
+            },
+            -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+            -- diagnostics = { disable = { 'missing-fields' } },
           },
         },
-      }
+      })
+      -- }
 
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install
@@ -447,37 +442,37 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      -- require('mason-lspconfig').setup {
-      --   ensure_installed = {},
-      --   automatic_installation = false,
-      --   handlers = {
-      --     function(server_name)
-      --       local server = servers[server_name] or {}
-      --       -- This handles overriding only values explicitly passed
-      --       -- by the server configuration above. Useful when disabling
-      --       -- certain features of an LSP (for example, turning off formatting for tsserver)
-      --       server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-      --       require('lspconfig')[server_name].setup(server)
-      --     end,
-      --   },
-      -- }
-      local lspconfig = require('lspconfig')
-
-      for server_name, config in pairs(servers) do
-        local is_deno = require("lspconfig").util.root_pattern({ "deno.json", "deno.lock" })
-
-        if server_name == 'denols' then
-          if is_deno then
-            lspconfig.denols.setup(config)
-            vim.lsp.config(server_name, config)
-          end
-          return
-        end
-
-        -- all others
-        lspconfig[server_name].setup {}
-        vim.lsp.config(server_name, config)
-      end
+      require('mason-lspconfig').setup {
+        ensure_installed = {},
+        automatic_installation = false,
+        -- handlers = {
+        --   function(server_name)
+        --     local server = servers[server_name] or {}
+        --     -- This handles overriding only values explicitly passed
+        --     -- by the server configuration above. Useful when disabling
+        --     -- certain features of an LSP (for example, turning off formatting for tsserver)
+        --     server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+        --     require('lspconfig')[server_name].setup(server)
+        --   end,
+        -- },
+      }
+    --   local lspconfig = require('lspconfig')
+    --
+    --   for server_name, config in pairs(servers) do
+    --     local is_deno = require("lspconfig").util.root_pattern({ "deno.json", "deno.lock" })
+    --
+    --     if server_name == 'denols' then
+    --       if is_deno then
+    --         lspconfig.denols.setup(config)
+    --         vim.lsp.config(server_name, config)
+    --       end
+    --       return
+    --     end
+    --
+    --     -- all others
+    --     lspconfig[server_name].setup {}
+    --     vim.lsp.config(server_name, config)
+    --   end
     end,
   },
 
