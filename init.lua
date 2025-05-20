@@ -405,7 +405,7 @@ require('lazy').setup({
         filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
         single_file_support = false,
         settings = {},
-        root_dir = lspconfig.util.root_pattern("package.json", "tsconfig.json", ".git"),
+        -- root_dir = lspconfig.util.root_pattern("package.json", "tsconfig.json", ".git"),
         on_attach = function(client, buf_nr)
           local root_dir = client.config.root_dir
           if has_deno_json(root_dir) then
@@ -415,6 +415,12 @@ require('lazy').setup({
       })
 
       vim.lsp.config('denols', {
+        on_attach = function(client, buf_nr)
+          local root_dir = client.config.root_dir
+          if not has_deno_json(root_dir) then
+            client.stop()
+          end
+        end,
         -- root_dir = require("lspconfig").util.root_pattern({"deno.json", "deno.jsonc"}),
       })
 
