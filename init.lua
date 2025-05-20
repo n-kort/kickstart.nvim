@@ -384,6 +384,14 @@ require('lazy').setup({
         --   }
         -- },
 
+      local lspconfig = require('lspconfig')
+
+      -- Function to check if deno.json exists in the root directory
+      local function has_deno_json(root_dir)
+        local Path = require('plenary.path')
+        return Path:new(root_dir .. '/deno.json'):exists()
+      end
+
       vim.lsp.config('ts_ls', {
         init_options = {
           plugins = {
@@ -397,10 +405,17 @@ require('lazy').setup({
         filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
         single_file_support = false,
         settings = {},
+        root_dir = lspconfig.util.root_pattern("package.json", "tsconfig.json", ".git"),
+        on_attach = function(client, buf_nr)
+          local root_dir = client.config.root_dir
+          if has_deno_json(root_dir) then
+            client.stop()
+          end
+        end
       })
 
       vim.lsp.config('denols', {
-        root_dir = require("lspconfig").util.root_pattern({"deno.json", "deno.jsonc"}),
+        -- root_dir = require("lspconfig").util.root_pattern({"deno.json", "deno.jsonc"}),
       })
 
       vim.lsp.config('volar', {
