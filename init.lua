@@ -393,19 +393,19 @@ require('lazy').setup({
       end
 
       vim.lsp.config('ts_ls', {
-        init_options = {
-          plugins = {
-            {
-              name = '@vue/typescript-plugin',
-              location = '/usr/local/lib/node_modules/@vue/typescript-plugin',
-              languages = { 'javascript', 'typescript', 'vue' }
-            }
-          }
-        },
-        filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
+        -- init_options = {
+        --   plugins = {
+        --     {
+        --       name = '@vue/typescript-plugin',
+        --       location = '/usr/local/lib/node_modules/@vue/typescript-plugin',
+        --       languages = { 'javascript', 'typescript', 'vue' }
+        --     }
+        --   }
+        -- },
+        filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx' },
+        -- filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
         single_file_support = false,
         settings = {},
-        -- root_dir = lspconfig.util.root_pattern("package.json", "tsconfig.json", ".git"),
         on_attach = function(client, buf_nr)
           local root_dir = client.config.root_dir
           if has_deno_json(root_dir) then
@@ -421,8 +421,58 @@ require('lazy').setup({
             client.stop()
           end
         end,
-        -- root_dir = require("lspconfig").util.root_pattern({"deno.json", "deno.jsonc"}),
       })
+
+      local vue_language_server_path = vim.fn.stdpath('data') .. "/mason/packages/vue-language-server/node_modules/@vue/language-server"
+      local vue_plugin = {
+        name = '@vue/typescript-plugin',
+        location = vue_language_server_path,
+        languages = { 'vue' },
+        configNamespace = 'typescript'
+      }
+
+      local vtsls_config = {
+        settings = {
+          vtsls = {
+            tsserver = {
+              globalPlugins = { vue_plugin }
+            }
+          }
+        },
+        filetypes = { 'vue' }
+      }
+
+      local vue_ls_config = {
+        on_init = function(client)
+          client.handlers['tsserver/request'] = function(_, result, context)
+            local clients = vim.lsp.get_clients({ bufnr = context.bufnr, name = 'vtsls' })
+            if #clients == 0 then
+              vim.notify('Could not find `vtsls` lsp client, `vue_ls` will not work without it.', vim.log.levels.ERROR)
+              return
+            end
+            local ts_client = clients[1]
+
+            local param = unpack(result)
+            local id, command, payload = unpack(param)
+            ts_client:exec_cmd({
+              title = 'vue_request_forward', -- You can give title anything as it's used to represent a command in the UI, `:h Client:exec_cmd`
+              command = 'typescript.tsserverRequest',
+              arguments = {
+                command,
+                payload,
+              },
+            }, { bufnr = context.bufnr }, function(_, r)
+              local response_data = { { id, r.body } }
+              ---@diagnostic disable-next-line: param-type-mismatch
+              client:notify('tsserver/response', response_data)
+            end)
+          end
+        end
+      }
+
+      vim.lsp.config('vtsls', vtsls_config)
+      vim.lsp.config('vue_ls', vue_ls_config)
+      vim.lsp.enable({ 'vtsls', 'vue_ls' })
 
       vim.lsp.config('volar', {
         filetypes = { 'vue' },
@@ -445,6 +495,7 @@ require('lazy').setup({
           },
         },
       })
+
       -- }
 
       -- Ensure the servers and tools above are installed

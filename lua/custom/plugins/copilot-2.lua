@@ -13,7 +13,9 @@ return {
           dismiss = "<C-k>"
         }
       },
-      file
+      filetypes = {
+        yaml = true
+      }
     })
   end,
 }
