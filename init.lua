@@ -745,7 +745,7 @@ require('lazy').setup({
       fuzzy = { implementation = 'lua' },
 
       -- Shows a signature help window while you type arguments for a function
-      signature = { enabled = true },
+      signature = { enabled = false },
     },
   },
 
@@ -846,6 +846,7 @@ require('lazy').setup({
   {
     -- Theme inspired by Atom
     'navarasu/onedark.nvim',
+    version = 'v0.1.0',
     priority = 1000,
     config = function()
       vim.g.onedark_config = {
