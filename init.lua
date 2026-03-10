@@ -205,8 +205,10 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 
 vim.api.nvim_create_autocmd('VimEnter', {
   callback = function()
-    vim.cmd('vsplit') -- split the window
-    vim.cmd("wincmd h") -- focus left
+    if vim.o.columns >= 180 then
+      vim.cmd('vsplit') -- split the window
+      vim.cmd("wincmd h") -- focus left
+    end
   end
 })
 
