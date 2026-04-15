@@ -306,118 +306,69 @@ require('lazy').setup({
 
   {
     -- Main LSP Configuration
+    -- nvim-lspconfig now only provides server-specific default configs.
+    -- The old require('lspconfig').server.setup{} pattern is deprecated.
+    -- Use vim.lsp.config() to customize and vim.lsp.enable() to activate.
     'neovim/nvim-lspconfig',
     dependencies = {
-      -- Automatically install LSPs and related tools to stdpath for Neovim
-      -- Mason must be loaded before its dependents so we need to set it up here.
-      -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
+      -- Mason must be loaded before its dependents
       { 'mason-org/mason.nvim', opts = {} },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-
-      -- Useful status updates for LSP
-      -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
       { 'j-hui/fidget.nvim', opts = {} },
-
-      -- Additional lua configuration, makes nvim stuff amazing!
-      'folke/neodev.nvim',
-      'saghen/blink.cmp'
+      'saghen/blink.cmp',
     },
     config = function()
       -- enable .mts TypeScript modules
-      vim.filetype.add({
-        extension = {
-          mts = 'typescriptreact'
-        }
+      vim.filetype.add({ extension = { mts = 'typescriptreact' } })
+
+      -- nvim 0.12 only auto-enables treesitter highlighting for a handful of built-in
+      -- filetypes (lua, markdown, help, query). Everything else needs an explicit call.
+      vim.api.nvim_create_autocmd('FileType', {
+        group = vim.api.nvim_create_augroup('treesitter-highlight', { clear = true }),
+        pattern = {
+          'vue', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
+          'html', 'css', 'scss', 'php', 'json', 'yaml', 'bash', 'vim',
+        },
+        callback = function()
+          vim.treesitter.start()
+        end,
       })
 
-      --  This function gets run when an LSP attaches to a particular buffer.
-      --    That is to say, every time a new file is opened that is associated with
-      --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
-      --    function will be executed to configure the current buffer
+      -- LspAttach: keymaps and features for any buffer where an LSP attaches
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
-          -- NOTE: Remember that Lua is a real programming language, and as such it is possible
-          -- to define small helper and utility functions so you don't have to repeat yourself.
-          --
-          -- In this case, we create a function that lets us more easily define mappings specific
-          -- for LSP related items. It sets the mode, buffer and description for us each time.
           local map = function(keys, func, desc, mode)
             mode = mode or 'n'
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
 
-          -- Rename the variable under your cursor.
-          --  Most Language Servers support renaming across files, etc.
           map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
-
-          -- Execute a code action, usually your cursor needs to be on top of an error
-          -- or a suggestion from your LSP for this to activate.
           map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
-
-          -- Find references for the word under your cursor.
           map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-
-          -- Jump to the implementation of the word under your cursor.
-          --  Useful when your language has ways of declaring types without an actual implementation.
           map('gri', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-
-          -- Jump to the definition of the word under your cursor.
-          --  This is where a variable was first declared, or where a function is defined, etc.
-          --  To jump back, press <C-t>.
           map('grd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-
-          -- WARN: This is not Goto Definition, this is Goto Declaration.
-          --  For example, in C this would take you to the header.
           map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-
-          -- Fuzzy find all the symbols in your current document.
-          --  Symbols are things like variables, functions, types, etc.
           map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
-
-          -- Fuzzy find all the symbols in your current workspace.
-          --  Similar to document symbols, except searches over your entire project.
           map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
-
-          -- Jump to the type of the word under your cursor.
-          --  Useful when you're not sure what type a variable is and you want to see
-          --  the definition of its *type*, not where it was *defined*.
           map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
-          -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
-          ---@param client vim.lsp.Client
-          ---@param method vim.lsp.protocol.Method
-          ---@param bufnr? integer some lsp support methods only in specific files
-          ---@return boolean
-          local function client_supports_method(client, method, bufnr)
-            if vim.fn.has 'nvim-0.11' == 1 then
-              return client:supports_method(method, bufnr)
-            else
-              return client.supports_method(method, { bufnr = bufnr })
-            end
-          end
-
-          -- The following two autocommands are used to highlight references of the
-          -- word under your cursor when your cursor rests there for a little while.
-          --    See `:help CursorHold` for information about when this is executed
-          --
-          -- When you move your cursor, the highlights will be cleared (the second autocommand).
           local client = vim.lsp.get_client_by_id(event.data.client_id)
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
+
+          -- Document highlight on cursor hold
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
               group = highlight_augroup,
               callback = vim.lsp.buf.document_highlight,
             })
-
             vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
               buffer = event.buf,
               group = highlight_augroup,
               callback = vim.lsp.buf.clear_references,
             })
-
             vim.api.nvim_create_autocmd('LspDetach', {
               group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
               callback = function(event2)
@@ -427,11 +378,8 @@ require('lazy').setup({
             })
           end
 
-          -- The following code creates a keymap to toggle inlay hints in your
-          -- code, if the language server you are using supports them
-          --
-          -- This may be unwanted, since they displace some of your code
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
+          -- Toggle inlay hints
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
@@ -439,8 +387,12 @@ require('lazy').setup({
         end,
       })
 
+      -- Disable LSP document color highlighting (nvim 0.12 built-in).
+      -- Tailwind and other servers send textDocument/documentColor which nvim
+      -- renders as background swatches by default — very distracting in a terminal.
+      vim.lsp.document_color.enable(false)
+
       -- Diagnostic Config
-      -- See :help vim.diagnostic.Opts
       vim.diagnostic.config {
         severity_sort = true,
         float = { border = 'rounded', source = 'if_many' },
@@ -457,32 +409,16 @@ require('lazy').setup({
           source = 'if_many',
           spacing = 2,
           format = function(diagnostic)
-            local diagnostic_message = {
-              [vim.diagnostic.severity.ERROR] = diagnostic.message,
-              [vim.diagnostic.severity.WARN] = diagnostic.message,
-              [vim.diagnostic.severity.INFO] = diagnostic.message,
-              [vim.diagnostic.severity.HINT] = diagnostic.message,
-            }
-            return diagnostic_message[diagnostic.severity]
+            return diagnostic.message
           end,
         },
       }
 
-      -- LSP servers and clients are able to communicate to each other what features they support.
-      --  By default, Neovim doesn't support everything that is in the LSP specification.
-       --  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
-      --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
+      -- Broadcast blink.cmp capabilities to all servers
       local capabilities = require('blink.cmp').get_lsp_capabilities()
+      vim.lsp.config('*', { capabilities = capabilities })
 
-      -- Enable the following language servers
-      --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
-      --
-      --  Add any additional override configuration in the following tables. Available keys are:
-      --  - cmd (table): Override the default command used to start the server
-      --  - filetypes (table): Override the default list of associated filetypes for the server
-      --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
-      --  - settings (table): Override the default settings passed when initializing the server.
-      --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      -- PHP
       vim.lsp.config('intelephense', {
         filetypes = { 'php' },
         settings = {
@@ -491,169 +427,110 @@ require('lazy').setup({
           }
         }
       })
-      -- local servers = {
-        -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`tsserver`) will work just fine
-        -- intelephense {
-        --   filetypes = { 'php' },
-        --   settings = {
-        --     intelephense = {
-        --       stubs = { "bcmath", "bz2", "Core", "curl", "date", "dom", "fileinfo", "filter", "gd", "gettext", "hash", "iconv", "imap", "intl", "json", "libxml", "mbstring", "mcrypt", "mysql", "mysqli", "password", "pcntl", "pcre", "PDO", "pdo_mysql", "Phar", "readline", "regex", "session", "SimpleXML", "sockets", "sodium", "standard", "superglobals", "tokenizer", "xml", "xdebug", "xmlreader", "xmlwriter", "yaml", "zip", "zlib", "wordpress", "wordpress-stubs", "woocommerce-stubs", "acf-pro-stubs", "wordpress-globals", "wp-cli-stubs", "genesis-stubs", "polylang-stubs" },
-        --     }
-        --   }
-        -- },
 
-      local lspconfig = require('lspconfig')
-
-      -- Function to check if deno.json exists in the root directory
-      local function has_deno_json(root_dir)
-        local Path = require('plenary.path')
-        return Path:new(root_dir .. '/deno.json'):exists()
-      end
-
-      vim.lsp.config('ts_ls', {
-        -- init_options = {
-        --   plugins = {
-        --     {
-        --       name = '@vue/typescript-plugin',
-        --       location = '/usr/local/lib/node_modules/@vue/typescript-plugin',
-        --       languages = { 'javascript', 'typescript', 'vue' }
-        --     }
-        --   }
-        -- },
-        filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx' },
-        -- filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx', 'vue' },
-        single_file_support = false,
-        settings = {},
-        on_attach = function(client, buf_nr)
-          local root_dir = client.config.root_dir
-          if has_deno_json(root_dir) then
-            client.stop()
-          end
-        end
-      })
-
-      vim.lsp.config('denols', {
-        on_attach = function(client, buf_nr)
-          local root_dir = client.config.root_dir
-          if not has_deno_json(root_dir) then
-            client.stop()
-          end
-        end,
-      })
-
-      local vue_language_server_path = vim.fn.stdpath('data') .. "/mason/packages/vue-language-server/node_modules/@vue/language-server"
-      local tsserver_filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact' }
+      -- Vue typescript plugin (used by both ts_ls and vtsls)
+      local vue_language_server_path = vim.fn.stdpath('data') .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
       local vue_plugin = {
         name = '@vue/typescript-plugin',
         location = vue_language_server_path,
         languages = { 'vue' },
-        configNamespace = 'typescript'
+        configNamespace = 'typescript',
       }
 
-      local vtsls_config = {
+      -- TypeScript / Deno: ts_ls stops itself in Deno projects, denols stops itself outside them
+      vim.lsp.config('ts_ls', {
+        filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
+        single_file_support = false,
+        root_markers = { 'package.json', 'tsconfig.json', 'jsconfig.json' },
+        -- ts_ls uses init_options.plugins for the vue typescript plugin
+        init_options = {
+          plugins = { vue_plugin },
+        },
+        on_attach = function(client)
+          -- vtsls is the preferred client for hover/signatures; disable on ts_ls
+          -- to avoid duplicate floating windows when both are attached.
+          client.server_capabilities.hoverProvider = false
+          client.server_capabilities.signatureHelpProvider = nil
+          -- Disable ts_ls semantic tokens on vue files; vue_ls handles them since v3.0.2
+          if vim.bo.filetype == 'vue' then
+            client.server_capabilities.semanticTokensProvider.full = false
+          end
+          local root = client.config.root_dir or ''
+          if vim.fn.filereadable(root .. '/deno.json') == 1 or vim.fn.filereadable(root .. '/deno.jsonc') == 1 then
+            client:stop()
+          end
+        end,
+      })
+
+      vim.lsp.config('denols', {
+        root_markers = { 'deno.json', 'deno.jsonc' },
+        on_attach = function(client)
+          local root = client.config.root_dir or ''
+          if vim.fn.filereadable(root .. '/deno.json') == 0 and vim.fn.filereadable(root .. '/deno.jsonc') == 0 then
+            client:stop()
+          end
+        end,
+      })
+
+      -- Vue LSP
+
+      vim.lsp.config('vtsls', {
+        filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
         settings = {
           vtsls = {
             tsserver = {
-              globalPlugins = { vue_plugin }
-            }
-          }
-        },
-        filetypes = { 'vue' }
-      }
-
-      local ts_ls_config = {
-        init_options = {
-          plugins = {
-            vue_plugin,
+              globalPlugins = { vue_plugin },
+            },
           },
         },
-        filetypes = tsserver_filetypes,
-      }
+        on_attach = function(client)
+          -- vue_ls handles semantic tokens for vue files since v3.0.2;
+          -- disable full semantic tokens on vtsls to avoid conflicts.
+          if vim.bo.filetype == 'vue' then
+            client.server_capabilities.semanticTokensProvider.full = false
+          end
+        end,
+      })
 
-      local vue_ls_config = {}
+      -- vue_ls: recent nvim-lspconfig handles tsserver/request forwarding automatically
+      vim.lsp.config('vue_ls', {})
 
-      vim.lsp.config('vtsls', vtsls_config)
-      vim.lsp.config('vue_ls', vue_ls_config)
-      -- vim.lsp.config('ts_ls', ts_ls_config)
-      vim.lsp.enable({ 'vtsls', 'vue_ls' })
+      -- Tailwind CSS (no extra config needed — defaults cover vue, ts, html, css, php)
+      vim.lsp.config('tailwindcss', {})
 
+      -- Lua
       vim.lsp.config('lua_ls', {
-        -- cmd = { ... },
-        -- filetypes = { ... },
-        -- capabilities = {},
         settings = {
           Lua = {
-            completion = {
-              callSnippet = 'Replace',
-            },
-            diagnostics = {
-              globals = { 'vim' },
-            },
-            -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-            -- diagnostics = { disable = { 'missing-fields' } },
+            completion = { callSnippet = 'Replace' },
+            diagnostics = { globals = { 'vim' } },
           },
         },
       })
 
-      -- Ensure the servers and tools above are installed
-      --
-      -- To check the current status of installed tools and/or manually install
-      -- other tools, you can run
-      --    :Mason
-      --
-      -- You can press `g?` for help in this menu.
-      --
-      -- `mason` had to be setup earlier: to configure its options see the
-      -- `dependencies` table for `nvim-lspconfig` above.
-      --
-      -- You can add other tools here that you want Mason to install
-      -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
+      -- Enable servers
+      vim.lsp.enable({
+        'intelephense',
+        'ts_ls',
+        'denols',
+        'vtsls',
+        'vue_ls',
+        'tailwindcss',
+        'lua_ls',
       })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      require('mason-lspconfig').setup {
-        ensure_installed = {},
-        automatic_installation = false,
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for tsserver)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
+      -- Ensure tools are installed via Mason
+      require('mason-tool-installer').setup {
+        ensure_installed = {
+          'stylua',
+          'intelephense',
+          'lua-language-server',
+          'typescript-language-server',
+          'vtsls',
+          'vue-language-server',
+          'tailwindcss-language-server',
         },
       }
-    --   local lspconfig = require('lspconfig')
-    --
-    --   for server_name, config in pairs(servers) do
-    --     local is_deno = require("lspconfig").util.root_pattern({ "deno.json", "deno.lock" })
-    --
-    --     if server_name == 'denols' then
-    --       if is_deno then
-    --         lspconfig.denols.setup(config)
-    --         vim.lsp.config(server_name, config)
-    --       end
-    --       return
-    --     end
-    --
-    --     -- all others
-    --     lspconfig[server_name].setup {}
-    --     vim.lsp.config(server_name, config)
-    --   end
     end,
   },
 
@@ -1020,28 +897,59 @@ require('lazy').setup({
 
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
+    lazy = false,
     build = ':TSUpdate',
-    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
-    -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-    opts = {
-      ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
-      -- Autoinstall languages that are not installed
-      auto_install = true,
-      highlight = {
-        enable = true,
-        -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-        --  If you are experiencing weird indenting issues, add the language to
-        --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
-      },
-      indent = { enable = true, disable = { 'ruby' } },
-    },
-    -- There are additional nvim-treesitter modules that you can use to interact
-    -- with nvim-treesitter. You should go explore a few and see what interests you:
-    --
-    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+    branch = 'main',
+    -- [[ Configure Treesitter ]] See `:help nvim-treesitter-intro`
+    config = function()
+      -- ensure basic parser are installed
+      local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'typescript', 'javascript', 'vue', 'php', 'css', 'json', 'yaml' }
+      require('nvim-treesitter').install(parsers)
+
+      ---@param buf integer
+      ---@param language string
+      local function treesitter_try_attach(buf, language)
+        -- check if parser exists and load it
+        if not vim.treesitter.language.add(language) then return end
+        -- enables syntax highlighting and other treesitter features
+        vim.treesitter.start(buf, language)
+
+        -- enables treesitter based folds
+        -- for more info on folds see `:help folds`
+        -- vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+        -- vim.wo.foldmethod = 'expr'
+
+        -- check if treesitter indentation is available for this language, and if so enable it
+        -- in case there is no indent query, the indentexpr will fallback to the vim's built in one
+        local has_indent_query = vim.treesitter.query.get(language, 'indents') ~= nil
+
+        -- enables treesitter based indentation
+        if has_indent_query then vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" end
+      end
+
+      local available_parsers = require('nvim-treesitter').get_available()
+      vim.api.nvim_create_autocmd('FileType', {
+        callback = function(args)
+          local buf, filetype = args.buf, args.match
+
+          local language = vim.treesitter.language.get_lang(filetype)
+          if not language then return end
+
+          local installed_parsers = require('nvim-treesitter').get_installed 'parsers'
+
+          if vim.tbl_contains(installed_parsers, language) then
+            -- enable the parser if it is installed
+            treesitter_try_attach(buf, language)
+          elseif vim.tbl_contains(available_parsers, language) then
+            -- if a parser is available in `nvim-treesitter` auto install it, and enable it after the installation is done
+            require('nvim-treesitter').install(language):await(function() treesitter_try_attach(buf, language) end)
+          else
+            -- try to enable treesitter features in case the parser exists but is not available from `nvim-treesitter`
+            treesitter_try_attach(buf, language)
+          end
+        end,
+      })
+    end,
   },
 
   {
