@@ -103,9 +103,6 @@ vim.o.smarttab = true
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 
--- Set highlight on search
-vim.o.hlsearch = false
-
 -- Make line numbers default
 vim.o.number = true
 
@@ -198,8 +195,8 @@ vim.keymap.set('n', '∆', ':m .+1<CR>==', { desc = 'Move line down' })
 vim.keymap.set('n', '˚', ':m .-2<CR>==', { desc = 'Move line up' })
 
 -- Diagnostic keymaps
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
+vim.keymap.set('n', '[d', function() vim.diagnostic.jump({count=-1}) end, { desc = 'Go to previous diagnostic message' })
+vim.keymap.set('n', ']d', function() vim.diagnostic.jump({count=1}) end, { desc = 'Go to next diagnostic message' })
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
 
@@ -320,7 +317,7 @@ require('lazy').setup({
     },
     config = function()
       -- enable .mts TypeScript modules
-      vim.filetype.add({ extension = { mts = 'typescriptreact' } })
+      vim.filetype.add({ extension = { mts = 'typescript' } })
 
       -- nvim 0.12 only auto-enables treesitter highlighting for a handful of built-in
       -- filetypes (lua, markdown, help, query). Everything else needs an explicit call.
@@ -438,44 +435,41 @@ require('lazy').setup({
       }
 
       -- TypeScript / Deno: ts_ls stops itself in Deno projects, denols stops itself outside them
+      -- ts_ls and vtsls only start in Node/package.json projects (not Deno).
+      -- denols only starts in Deno projects. root_markers ensures they never
+      -- start in the wrong project type — no on_attach stop() needed.
+      local node_root_markers = { 'package.json', 'tsconfig.json', 'jsconfig.json' }
+
       vim.lsp.config('ts_ls', {
         filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
         single_file_support = false,
-        root_markers = { 'package.json', 'tsconfig.json', 'jsconfig.json' },
+        root_markers = node_root_markers,
         -- ts_ls uses init_options.plugins for the vue typescript plugin
         init_options = {
           plugins = { vue_plugin },
         },
         on_attach = function(client)
-          -- vtsls is the preferred client for hover/signatures; disable on ts_ls
-          -- to avoid duplicate floating windows when both are attached.
+          -- vtsls is the preferred client for completions/hover/signatures
+          client.server_capabilities.completionProvider = nil
           client.server_capabilities.hoverProvider = false
           client.server_capabilities.signatureHelpProvider = nil
           -- Disable ts_ls semantic tokens on vue files; vue_ls handles them since v3.0.2
           if vim.bo.filetype == 'vue' then
             client.server_capabilities.semanticTokensProvider.full = false
           end
-          local root = client.config.root_dir or ''
-          if vim.fn.filereadable(root .. '/deno.json') == 1 or vim.fn.filereadable(root .. '/deno.jsonc') == 1 then
-            client:stop()
-          end
         end,
       })
 
       vim.lsp.config('denols', {
         root_markers = { 'deno.json', 'deno.jsonc' },
-        on_attach = function(client)
-          local root = client.config.root_dir or ''
-          if vim.fn.filereadable(root .. '/deno.json') == 0 and vim.fn.filereadable(root .. '/deno.jsonc') == 0 then
-            client:stop()
-          end
-        end,
       })
 
       -- Vue LSP
 
       vim.lsp.config('vtsls', {
         filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+        single_file_support = false,
+        root_markers = node_root_markers,
         settings = {
           vtsls = {
             tsserver = {
@@ -484,8 +478,7 @@ require('lazy').setup({
           },
         },
         on_attach = function(client)
-          -- vue_ls handles semantic tokens for vue files since v3.0.2;
-          -- disable full semantic tokens on vtsls to avoid conflicts.
+          -- vue_ls handles semantic tokens for vue files since v3.0.2
           if vim.bo.filetype == 'vue' then
             client.server_capabilities.semanticTokensProvider.full = false
           end
@@ -723,7 +716,7 @@ require('lazy').setup({
       -- Document existing key chains
       spec = {
         { '<leader>s', group = '[S]earch' },
-        { '<leader>t', group = '[T]oggle' },
+        -- { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
     },
@@ -787,13 +780,7 @@ require('lazy').setup({
 
         -- `build` is used to run some command when the plugin is installed/updated.
         -- This is only run then, not every time Neovim starts up.
-
-        -- `build` is used to run some command when the plugin is installed/updated.
-        -- This is only run then, not every time Neovim starts up.
         build = 'make',
-
-        -- `cond` is a condition used to determine whether this plugin should be
-        -- installed and loaded.
 
         -- `cond` is a condition used to determine whether this plugin should be
         -- installed and loaded.
