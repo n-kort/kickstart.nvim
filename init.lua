@@ -425,7 +425,7 @@ require('lazy').setup({
         }
       })
 
-      -- Vue typescript plugin (used by both ts_ls and vtsls)
+      -- Vue typescript plugin (used by vtsls)
       local vue_language_server_path = vim.fn.stdpath('data') .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
       local vue_plugin = {
         name = '@vue/typescript-plugin',
@@ -434,31 +434,10 @@ require('lazy').setup({
         configNamespace = 'typescript',
       }
 
-      -- TypeScript / Deno: ts_ls stops itself in Deno projects, denols stops itself outside them
-      -- ts_ls and vtsls only start in Node/package.json projects (not Deno).
+      -- TypeScript / Deno: vtsls only starts in Node/package.json projects (not Deno).
       -- denols only starts in Deno projects. root_markers ensures they never
       -- start in the wrong project type — no on_attach stop() needed.
       local node_root_markers = { 'package.json', 'tsconfig.json', 'jsconfig.json' }
-
-      vim.lsp.config('ts_ls', {
-        filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
-        single_file_support = false,
-        root_markers = node_root_markers,
-        -- ts_ls uses init_options.plugins for the vue typescript plugin
-        init_options = {
-          plugins = { vue_plugin },
-        },
-        on_attach = function(client)
-          -- vtsls is the preferred client for completions/hover/signatures
-          client.server_capabilities.completionProvider = nil
-          client.server_capabilities.hoverProvider = false
-          client.server_capabilities.signatureHelpProvider = nil
-          -- Disable ts_ls semantic tokens on vue files; vue_ls handles them since v3.0.2
-          if vim.bo.filetype == 'vue' then
-            client.server_capabilities.semanticTokensProvider.full = false
-          end
-        end,
-      })
 
       vim.lsp.config('denols', {
         root_markers = { 'deno.json', 'deno.jsonc' },
@@ -504,7 +483,6 @@ require('lazy').setup({
       -- Enable servers
       vim.lsp.enable({
         'intelephense',
-        'ts_ls',
         'denols',
         'vtsls',
         'vue_ls',
@@ -518,7 +496,6 @@ require('lazy').setup({
           'stylua',
           'intelephense',
           'lua-language-server',
-          'typescript-language-server',
           'vtsls',
           'vue-language-server',
           'tailwindcss-language-server',
