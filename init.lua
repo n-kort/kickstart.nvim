@@ -488,6 +488,7 @@ require('lazy').setup({
         'vue_ls',
         'tailwindcss',
         'lua_ls',
+        'shopify_theme_ls',
       })
 
       -- Ensure tools are installed via Mason
