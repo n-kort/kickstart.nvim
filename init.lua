@@ -434,9 +434,9 @@ require('lazy').setup({
         configNamespace = 'typescript',
       }
 
-      -- TypeScript / Deno / Bun: lspconfig's vtsls default root_dir already handles
-      -- bun.lock as a root marker and excludes Deno projects, so no override needed.
-      -- denols only starts in Deno projects via root_markers.
+      -- TypeScript / Deno / Bun: vtsls starts for Node/Bun projects, denols for Deno.
+      -- bun.lock added alongside the original markers so Bun projects are detected.
+      local node_root_markers = { 'package.json', 'tsconfig.json', 'jsconfig.json', 'bun.lock' }
 
       vim.lsp.config('denols', {
         root_markers = { 'deno.json', 'deno.jsonc' },
@@ -447,16 +447,11 @@ require('lazy').setup({
       vim.lsp.config('vtsls', {
         filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
         single_file_support = false,
+        root_markers = node_root_markers,
         settings = {
           vtsls = {
-            autoUseWorkspaceTsdk = true,
             tsserver = {
               globalPlugins = { vue_plugin },
-            },
-          },
-          typescript = {
-            preferences = {
-              importModuleSpecifier = 'shortest',
             },
           },
         },
